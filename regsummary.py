@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
 """ 
-
 Example usage:
-
 python regsummary.py /path/to/correlations
 
 """
@@ -22,7 +20,7 @@ def base_64(file):
 def get_yaml(directory, outfile_html, outfile_csv):
     keys = []
     correlations = []
-    info_config_dataset = []
+    dataset = []
     subject = []
     df = pd.DataFrame()
 
@@ -40,11 +38,11 @@ def get_yaml(directory, outfile_html, outfile_csv):
                         subject.append(sub)
                         corr = (value[0]).split(':')
                         correlations.append(corr[0])
-                        info_config_dataset.append(subdirectory.split('correlations_')[1])
+                        dataset.append(subdirectory.split('correlations_')[1])
                         
-    list_of_tuples = list(zip(info_config_dataset,subject,keys, correlations))
+    list_of_tuples = list(zip(dataset, subject, keys, correlations))
     df = pd.DataFrame(list_of_tuples,
-                    columns=['Info_config_dataset', 'Subject', 'Keys', 'Correlation'])
+                    columns=['Config/Dataset', 'Subject', 'Keys', 'Correlation'])
     df['Correlation'] = df['Correlation'].astype(float)
     df.sort_values(by=['Correlation'], ascending=False, inplace=True)
     df.to_html(outfile_html, index=False)
@@ -57,7 +55,12 @@ def get_boxplots(directory, outfile_html, outfile_csv):
     directory = '/ocean/projects/med220004p/shared/summary-regtest/correlations_ccs-options'
     for subdirectory in os.listdir(directory):
         d = os.path.join(directory, subdirectory)
-        filelist= [file for file in os.listdir(d) if file.endswith('.png')]
+
+        # Only pull T1w, mask, and bold boxplots
+        filelist= [file for file in os.listdir(d) if file.endswith('.png') \
+                    and (file.startswith('T1w') or file.startswith('mask') \
+                    or file.startswith('bold'))]
+
         for x in filelist:
             f = os.path.join(d, x)
             string += base_64(f)
@@ -66,6 +69,7 @@ def get_boxplots(directory, outfile_html, outfile_csv):
             f.write(string)
     
 def main():
+    
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("correlations_dir", type=str, 
